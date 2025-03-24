@@ -2,7 +2,7 @@ import argparse
 import os
 from src.ocr.ocr_processor import extract_text_from_pdf
 from src.classification.bank_classifier import classify_bank
-from src.extraction.data_extractor import extract_transaction_data
+from extraction.extract_data import extract_transaction_data
 import json
 
 def process_bank_transcript(input_file: str):
