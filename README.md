@@ -12,22 +12,51 @@ This project aims to automate the extraction of key financial data from scanned 
 ```
 📂 bank_transcript_scanner
 │── 📁 data                  # Raw and processed data
-│   ├── 📂 raw                # Original scanned PDFs or images
-│   ├── 📂 processed          # Text extracted from OCR
+│   ├── 📂 raw               # Original scanned PDFs/images of bank statements
+│   ├── 📂 processed         # Extracted text from OCR
 │── 📁 models                # Trained models for classification & extraction
+│   ├── bank_classifier.pkl  # Bank classification model
 │── 📁 notebooks             # Jupyter Notebooks for exploration and testing
 │── 📁 src                   # Source code
 │   ├── 📂 ocr               # OCR processing scripts
+│   │   ├── preprocess.py    # Preprocess images (grayscale, thresholding, etc.)
+│   │   ├── ocr_engine.py    # Extract text using Tesseract OCR
+│   │   ├── text_cleaning.py # Clean and format extracted text
 │   ├── 📂 classification    # Bank classification model
-│   ├── 📂 extraction        # Data extraction logic
+│   │   ├── train_classifier.py # Train ML model for bank classification
+│   │   ├── classify_bank.py    # Classify bank from extracted text
+│   │   ├── bank_classifier.pkl # Saved ML model
+│   ├── 📂 extraction        # Extract key details from statements
+│   │   ├── extract_data.py  # Extract dates, amounts, transaction IDs
+│   │   ├── validation.py    # Validate extracted information
 │   ├── 📂 backend           # Backend API (FastAPI)
+│   │   ├── main.py          # FastAPI app entry point
+│   │   ├── routes.py        # API routes for OCR, classification, extraction
+│   │   ├── models.py        # Define database models
+│   │   ├── database.py      # Database connection setup
+│   │   ├── requirements.txt # Backend dependencies
 │   ├── 📂 frontend          # Frontend (Next.js)
-│   ├── main.py              # Entry point of the pipeline
+│   │   ├── 📂 components    # Reusable UI components
+│   │   ├── 📂 pages         # Main pages (upload, results, etc.)
+│   │   ├── 📂 public        # Static assets (icons, logos)
+│   │   ├── 📂 styles        # CSS/Styling files
+│   │   ├── package.json     # Frontend dependencies
+│   │   ├── next.config.js   # Next.js configuration
+│   │   ├── App.js           # Main app file
+│   │   ├── index.js         # Home page
+│   ├── main.py              # Entry point for running pipeline (CLI)
 │── 📁 tests                 # Unit tests for OCR, classification, extraction
+│   ├── test_ocr.py          # Test OCR extraction
+│   ├── test_classification.py # Test bank classification model
+│   ├── test_extraction.py   # Test data extraction
 │── 📁 deployment            # Deployment configurations (Docker, cloud, etc.)
-│── requirements.txt         # Dependencies
+│   ├── Dockerfile           # Docker setup
+│   ├── docker-compose.yml   # Multi-container setup (DB, API, frontend)
+│   ├── config.yaml          # Configuration settings
+│── requirements.txt         # Backend dependencies
 │── README.md                # Project documentation
 │── LICENSE                  # License information
+
 ```
 
 ## 🛠️ Setup Instructions
