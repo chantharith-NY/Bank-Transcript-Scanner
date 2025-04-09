@@ -39,6 +39,7 @@ pure_eval==0.2.3
 pydantic==2.10.6
 pydantic_core==2.27.2
 Pygments==2.19.1
+pymongo
 pyparsing==3.2.1
 pytesseract==0.3.13
 python-dateutil==2.9.0.post0
