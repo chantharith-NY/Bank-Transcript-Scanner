@@ -1,12 +1,21 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from pymongo import MongoClient
+import os
+from dotenv import load_dotenv
 
-DATABASE_URL = "sqlite:///./database.db"
+# Load environment variables
+load_dotenv()
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+# Get MongoDB connection string from environment variable
+MONGO_URI = os.getenv("MONGO_URI", "mongodb+srv://admin:securepassword123@banktransactioncluster.lx6nlh2.mongodb.net/bank_transcript_scanner?retryWrites=true&w=majority&appName=BankTransactionCluster")
 
-def init_db():
-    Base.metadata.create_all(bind=engine)
+# Connect to MongoDB
+client = MongoClient(MONGO_URI)
+db = client["bank_transcript_scanner"]
+daily_totals_collection = db["daily_totals"]
+
+# Test the connection
+try:
+    client.server_info()
+    print("Connected to MongoDB successfully")
+except Exception as e:
+    print(f"Failed to connect to MongoDB: {e}")

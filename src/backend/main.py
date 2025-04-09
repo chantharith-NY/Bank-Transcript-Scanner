@@ -1,16 +1,10 @@
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from routes import router
-from database import init_db
+from database import transactions_collection
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    init_db()
-    yield  # This allows FastAPI to continue running
+sample = {
+    "bank": "ABA",
+    "transaction_id": "TX9999",
+    "amount": 99.99,
+    "date": "2025-04-08"
+}
 
-app = FastAPI(lifespan=lifespan)
-app.include_router(router)
-
-@app.get("/")
-def root():
-    return {"message": "Bank Transcript Scanner API"}
+transactions_collection.insert_one(sample)

@@ -1,12 +1,16 @@
-from sqlalchemy import Column, Integer, String, Float
-from database import Base
+from pydantic import BaseModel
+from typing import Optional, List
+from datetime import datetime
 
-class Transaction(Base):
-    __tablename__ = "transactions"
-
-    id = Column(Integer, primary_key=True, index=True)
-    bank_name = Column(String, index=True)
-    transaction_id = Column(String, unique=True, index=True)
-    date = Column(String)
-    amount = Column(Float)
-    status = Column(String)  # "Complete" or "Missing Data"
+class Transaction(BaseModel):
+    bank_name: str
+    transaction_id: str
+    amount: float
+    date: datetime
+    status: str = "valid"
+    
+class AuditSummary(BaseModel):
+    date: datetime
+    total_transactions: int
+    total_amount: float
+    failed_transactions: List[str]
