@@ -6,7 +6,7 @@ export default function About() {
   return (
     <div className="min-h-screen bg-[#F5F6FA] text-[#333333] font-roboto flex flex-col">
       <Head>
-        <title>About Us</title>
+        <title>Bank Transaction Scanner</title>
         <link rel='icon' href="/ams-favicon.ico" className='rounded-2xl' />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
       </Head>
