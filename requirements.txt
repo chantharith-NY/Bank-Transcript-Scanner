@@ -47,6 +47,7 @@ pytesseract
 python-dateutil
 pytz
 pyzmq
+scipy
 six
 sniffio
 stack-data
