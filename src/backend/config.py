@@ -1,0 +1,2 @@
+MONGO_URL = "mongodb+srv://admin:securepassword123@banktransactioncluster.lx6nlh2.mongodb.net/bank_transcript_scanner?retryWrites=true&w=majority&appName=BankTransactionCluster"
+MONGO_DATABASE = "bank_transcript_scanner"
