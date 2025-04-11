@@ -25,7 +25,7 @@ kiwisolver
 matplotlib
 matplotlib-inline
 nest-asyncio
-numpy==1.24.3
+numpy
 opencv-python
 packaging
 pandas
@@ -47,11 +47,12 @@ pytesseract
 python-dateutil
 pytz
 pyzmq
+scipy
 six
 sniffio
 stack-data
 starlette
-tensorflow==2.13.0
+tensorflow
 tornado
 traitlets
 typing_extensions
