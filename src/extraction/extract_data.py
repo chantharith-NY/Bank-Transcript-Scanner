@@ -8,7 +8,14 @@ from PIL import Image
 def extract_data_aba(image: np.ndarray) -> List[Dict]:
     extracted_transactions = []
     try:
-        extracted_text = pytesseract.image_to_string(Image.fromarray(image), lang='eng')
+        # Perform OCR on the image
+        extracted_text = pytesseract.image_to_string(Image.fromarray(image), lang='eng') # Specify language if needed
+
+        # Regular expressions for ABA Bank statement
+        id_pattern = re.compile(r"Trx\. ID:\s*(\d+)")
+        amount_pattern = re.compile(r"[-]?\d{1,3}(?:,\d{3})*\.\d{2}\s*(USD|KHR)") # Handles comma separators
+        date_pattern = re.compile(r"Transaction date: \s*(\w{3}\s+\d{1,2},\s+\d{4})\s+(\d{1,2}:\d{2}\s*(?:AM|PM))")
+        
         lines = extracted_text.splitlines()
 
         transaction: Dict[str, Optional[str | float | dict]] = {}
