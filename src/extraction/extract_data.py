@@ -1,6 +1,6 @@
 # extract_data.py
 import re
-from typing import List, Dict
+from typing import List, Dict, Optional
 import pytesseract
 import numpy as np
 from PIL import Image
@@ -8,45 +8,49 @@ from PIL import Image
 def extract_data_aba(image: np.ndarray) -> List[Dict]:
     extracted_transactions = []
     try:
-        # Perform OCR on the image
-        extracted_text = pytesseract.image_to_string(Image.fromarray(image), lang='eng') # Specify language if needed
-
-        # Regular expressions for ABA Bank statement
-        id_pattern = re.compile(r"Trx\. ID:\s*(\d+)")
-        amount_pattern = re.compile(r"[-]?\d{1,3}(?:,\d{3})*\.\d{2}\s*USD") # Handles comma separators
-        date_pattern = re.compile(r"Transaction date: \s*(\w{3}\s+\d{1,2},\s+\d{4})\s+(\d{1,2}:\d{2}\s*(?:AM|PM))")
-
-        # Split the extracted text into lines or relevant blocks if needed for better parsing
+        extracted_text = pytesseract.image_to_string(Image.fromarray(image), lang='eng')
         lines = extracted_text.splitlines()
 
-        transaction = {}
-        for line in lines:
-            id_match = id_pattern.search(line)
-            if id_match:
-                transaction['transaction_id'] = id_match.group(1)
+        transaction: Dict[str, Optional[str | float | dict]] = {}
+        for i, line in enumerate(lines):
+            if "Trx. ID:" in line:
+                id_match = re.search(r"Trx\. ID:\s*(\d+)", line) # Keep on the same line if it appears together
+                if not id_match and i + 1 < len(lines):
+                    id_match = re.search(r"(\d+)", lines[i+1]) # Check the next line
+                if id_match:
+                    transaction['transaction_id'] = id_match.group(1)
 
-            amount_match = amount_pattern.search(line)
+            if "Transaction date:" in line:
+                date_time_match = re.search(r"Transaction date:\s*(\w{3}\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2}\s*(?:AM|PM))", line) # Try same line first
+                if not date_time_match and i + 1 < len(lines):
+                    date_time_match = re.search(r"(\w{3}\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2}\s*(?:AM|PM))", lines[i+1]) # Check next line
+                if date_time_match:
+                    transaction['date'] = date_time_match.group(1)
+                    transaction['time'] = date_time_match.group(2)
+
+            amount_match = re.search(r"^-?(\d{1,3}(?:,\d{3})*\.\d{2})\s*USD$", line) # Try matching amount on a single line
+            if not amount_match: # If not found on a single line, try a broader search
+                amount_match = re.search(r"([-]?\d{1,3}(?:,\d{3})*\.\d{2})\s*USD", line)
+                if amount_match and "Original amount:" not in line: # Ignore original amount
+                    pass # Use this match
+
             if amount_match:
-                amount_str = amount_match.group(0).replace(",", "").replace(" USD", "")
+                amount_str = amount_match.group(1).replace(",", "")
                 try:
                     transaction['amount'] = float(amount_str)
                 except ValueError:
                     print(f"Error converting amount: {amount_str}")
 
-            date_match = date_pattern.search(line)
-            if date_match:
-                transaction['date'] = date_match.group(1)
-                transaction['time'] = date_match.group(2)
+            # More robust description extraction will be needed based on the layout
+            # This is a very basic example - you'll need to analyze the receipt structure
+            if "WANG XINMIN" in line and not transaction.get('description'):
+                transaction['description'] = "Payment to WANG XINMIN"
 
-            # You might need more sophisticated logic to identify the end of a transaction
-            # and append it to extracted_transactions. This depends heavily on the statement format.
-            # For a simple case where each transaction spans a few lines and has all info,
-            # you might need to implement a state machine or look for specific delimiters.
+            if transaction.get('transaction_id') and transaction.get('date') and transaction.get('amount'):
+                extracted_transactions.append(transaction.copy())
+                transaction = {}
 
-        # Simple approach: If we found some key information, consider it a transaction.
-        if transaction.get('transaction_id') or transaction.get('amount') or transaction.get('date'):
-            extracted_transactions.append(transaction)
-
+        print(f"Extracted Transactions (ABA):\n{extracted_transactions}") # Log the extracted transactions
         if not extracted_transactions:
             print(f"Could not extract any transactions from ABA statement (OCR text):\n{extracted_text[:200]}...")
 
@@ -60,19 +64,12 @@ def extract_data_aba(image: np.ndarray) -> List[Dict]:
 def extract_data_aclida(image: np.ndarray) -> List[Dict]:
     extracted_transactions = []
     try:
-        # Perform OCR on the image
-        extracted_text = pytesseract.image_to_string(Image.fromarray(image), lang='eng') # Specify language if needed
-
-        # Regular expressions for ACLEDA Bank statement (adjust based on actual format)
-        amount_pattern = re.compile(r"Payment Amount\s*:\s*([-]?\d{1,3}(?:,\d{3})*\.\d{2})\s*USD")
-        datetime_pattern = re.compile(r"Date\s*:\s*(\w{3}\s+\d{1,2},\s+\d{4})\s+(\d{2}:\d{2}\s*(?:AM|PM))")
-        completed_ref_pattern = re.compile(r"Completed\s*:\s*Ref\.\s*(\S+)")
-        external_txn_ref_pattern = re.compile(r"External Txn Ref\s*:\s*(\S+)")
-
+        extracted_text = pytesseract.image_to_string(Image.fromarray(image), lang='eng')
         lines = extracted_text.splitlines()
-        transaction = {}
+
+        transaction: Dict[str, Optional[str | float | dict]] = {}
         for line in lines:
-            amount_match = amount_pattern.search(line)
+            amount_match = re.search(r"Payment Amount\s*:\s*([-]?\d{1,3}(?:,\d{3})*\.\d{2})\s*USD", line)
             if amount_match:
                 amount_str = amount_match.group(1).replace(",", "")
                 try:
@@ -80,21 +77,37 @@ def extract_data_aclida(image: np.ndarray) -> List[Dict]:
                 except ValueError:
                     print(f"Error converting amount: {amount_str}")
 
-            datetime_match = datetime_pattern.search(line)
+            datetime_match = re.search(r"Date\s*:\s*(\w{3}\s+\d{1,2},\s+\d{4})\s+(\d{2}:\d{2}\s*(?:AM|PM))", line)
             if datetime_match:
                 transaction['date'] = datetime_match.group(1)
                 transaction['time'] = datetime_match.group(2)
 
-            completed_ref_match = completed_ref_pattern.search(line)
+            completed_ref_match = re.search(r"Completed\s*:\s*Ref\.\s*(\S+)", line)
             if completed_ref_match:
                 transaction['completed_ref'] = completed_ref_match.group(1)
 
-            external_txn_ref_match = external_txn_ref_pattern.search(line)
+            external_txn_ref_match = re.search(r"External Txn Ref\s*:\s*(\S+)", line)
             if external_txn_ref_match:
                 transaction['external_txn_ref'] = external_txn_ref_match.group(1)
 
-        if transaction.get('amount') and transaction.get('date') and transaction.get('time'):
-            extracted_transactions.append(transaction)
+            description_match = re.search(r"Description\s*:\s*(.+)", line) # Example - adjust
+            if description_match:
+                transaction['description'] = description_match.group(1).strip()
+
+            if transaction.get('amount') and transaction.get('date'):
+                info: Dict[str, Optional[List[str]]] = {}
+                if not transaction.get('date'):
+                    info.setdefault('missing_fields', []).append('date')
+                if transaction.get('amount') is None:
+                    info.setdefault('missing_fields', []).append('amount')
+                if not transaction.get('description'):
+                    info.setdefault('missing_fields', []).append('description')
+
+                if info:
+                    transaction['info'] = info
+
+                extracted_transactions.append(transaction.copy()) # Append a copy
+                transaction = {} # Reset
 
         if not extracted_transactions:
             print(f"Could not extract any transactions from ACLEDA statement (OCR text):\n{extracted_text[:200]}...")
