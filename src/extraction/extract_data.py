@@ -13,7 +13,7 @@ def extract_data_aba(image: np.ndarray) -> List[Dict]:
 
         # Regular expressions for ABA Bank statement
         id_pattern = re.compile(r"Trx\. ID:\s*(\d+)")
-        amount_pattern = re.compile(r"[-]?\d{1,3}(?:,\d{3})*\.\d{2}\s*USD") # Handles comma separators
+        amount_pattern = re.compile(r"[-]?\d{1,3}(?:,\d{3})*\.\d{2}\s*(USD|KHR)") # Handles comma separators
         date_pattern = re.compile(r"Transaction date: \s*(\w{3}\s+\d{1,2},\s+\d{4})\s+(\d{1,2}:\d{2}\s*(?:AM|PM))")
 
         # Split the extracted text into lines or relevant blocks if needed for better parsing
