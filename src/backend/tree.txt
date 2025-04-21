@@ -1,0 +1,26 @@
+Folder PATH listing for volume Drive
+Volume serial number is 5E32-5E8B
+E:.
+¦   api.py
+¦   bank_classifier.py
+¦   config.py
+¦   database.py
+¦   models.py
+¦   preprocess.py
+¦   requirements.txt
+¦   routes.py
+¦   tree.txt
+¦   
++---drive_models
++---models
+¦       bank_classification.h5
+¦       
++---test
+¦       images.csv
+¦       test.PNG
+¦       test.py
+¦       
++---__pycache__
+        bank_classifier.cpython-312.pyc
+        preprocess.cpython-312.pyc
+        

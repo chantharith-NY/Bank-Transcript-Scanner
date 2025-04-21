@@ -1,15 +1,31 @@
 import requests
 import os
-import json  # Added missing import
+import json
 from pathlib import Path
 from typing import List, Dict
+
+def check_health(endpoint: str = "http://localhost:5000/health"):
+    """
+    Check the health of the API and model status.
+    """
+    try:
+        response = requests.get(endpoint, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        print("Health Check:", json.dumps(data, indent=2))
+        return data.get("model_loaded", False)
+    except requests.exceptions.RequestException as e:
+        print(f"Health Check Failed: {str(e)}")
+        return False
 
 def test_classify_endpoint(image_paths: List[str], endpoint: str = "http://localhost:5000/classify"):
     """
     Test the /classify endpoint with image files.
     
     Args:
-        image_paths (List[str]): List of paths to image files.
+        image_paths (List[str]): List of
+
+ paths to image files.
         endpoint (str): API endpoint URL.
         
     Returns:
@@ -20,7 +36,7 @@ def test_classify_endpoint(image_paths: List[str], endpoint: str = "http://local
         if not Path(img_path).is_file():
             print(f"Skipping {img_path}: Not a valid file")
             continue
-        files.append(("files", (Path(img_path).name, open(img_path, "rb"), "image/jpeg")))
+        files.append(("files", (Path(img_path).name, open(img_path, "rb"), "image/png")))
     
     if not files:
         print("No valid images to test")
@@ -66,6 +82,11 @@ def main(input_path: str, endpoint: str = "http://localhost:5000/classify"):
         endpoint (str): API endpoint URL.
     """
     try:
+        # Check health first
+        if not check_health():
+            print("Aborting: Model not loaded or server unavailable")
+            return
+        
         # Collect image paths
         input_path = Path(input_path)
         image_paths = []
@@ -93,7 +114,7 @@ def main(input_path: str, endpoint: str = "http://localhost:5000/classify"):
 
 if __name__ == "__main__":
     # Configuration
-    input_path = "test.png"  # Updated to match your test image
-    endpoint = "http://localhost:5000/classify"  # FastAPI endpoint
+    input_path = "test.PNG"
+    endpoint = "http://localhost:5000/classify"
     
     main(input_path, endpoint)

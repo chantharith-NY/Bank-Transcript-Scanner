@@ -1,0 +1,63 @@
+Folder PATH listing for volume Drive
+Volume serial number is 5E32-5E8B
+E:.
+¦   main.py
+¦   tree.txt
+¦   
++---backend
+¦   ¦   api.py
+¦   ¦   bank_classifier.py
+¦   ¦   config.py
+¦   ¦   database.py
+¦   ¦   models.py
+¦   ¦   preprocess.py
+¦   ¦   requirements.txt
+¦   ¦   routes.py
+¦   ¦   
+¦   +---models
+¦           bank_classification.h5
+¦           
++---extraction
+¦       extract_data.py
+¦       validation.py
+¦       
++---frontend
+    ¦   .gitignore
+    ¦   next.config.ts
+    ¦   package-lock.json
+    ¦   package.json
+    ¦   postcss.config.mjs
+    ¦   README.md
+    ¦   tsconfig.json
+    ¦   
+    +---components
+    ¦       Footer.js
+    ¦       Header.js
+    ¦       
+    +---deployment
+    ¦       config.yml
+    ¦       docker-compose.yml
+    ¦       Dockerfile
+    ¦       
+    +---pages
+    ¦       about.js
+    ¦       history.js
+    ¦       index.js
+    ¦       _app.js
+    ¦       _document.js
+    ¦       
+    +---public
+            ams-favicon.ico
+            ams-logo.jpg
+            chantharith.jpg
+            chettra.png
+            chungheang.jpg
+            devid.jpg
+            file.svg
+            globe.svg
+            lyhorng.png
+            next.svg
+            theary.jpg
+            vercel.svg
+            window.svg
+            
