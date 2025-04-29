@@ -28,7 +28,7 @@ def extract_data_aba(image: np.ndarray) -> List[Dict]:
                     transaction['transaction_id'] = id_match.group(1)
 
             if "Transaction date:" in line:
-                date_time_match = re.search(r"Transaction date:\s*(\w{3}\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2}\s*(?:AM|PM))", line) # Try same line first
+                date_time_match = re.search(r"Transaction date:\s*(\w{3}\s+\d{1,2},\s+\d{4})\s+(\d{1,2}:\d{2}\s*(?:AM|PM))", line) # Try same line first
                 if not date_time_match and i + 1 < len(lines):
                     date_time_match = re.search(r"(\w{3}\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2}\s*(?:AM|PM))", lines[i+1]) # Check next line
                 if date_time_match:
