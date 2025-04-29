@@ -14,8 +14,8 @@ import numpy as np
 from io import BytesIO
 import pandas as pd
 
-from .backend.database import create_extraction_batch, store_extracted_data, get_extraction_results, get_all_extraction_batches, store_zip_file_path, store_report_file_path
-from .backend.models import FileUploadResponse, ExtractionResult, ValidationError, ProcessingReportResponse, HistoryItem
+from .backend.database import create_extraction_batch, store_extracted_data, get_extraction_results, get_all_extraction_batches, store_zip_file_path, store_report_file_path, get_transactions_by_upload_id
+from .backend.models import FileUploadResponse, ExtractionResult, ValidationError, ProcessingReportResponse, HistoryItem, Transaction
 from .backend.bank_classifier import classify_bank as classify_bank_module
 from .backend.preprocess import preprocess_image
 from .extraction.extract_data import extract_data as extract_data_module
@@ -139,7 +139,32 @@ async def upload_file(files: List[UploadFile] = File(...)):
     serialized_validation_errors = [item.model_dump() for item in validation_errors_all]
 
     await store_extracted_data(upload_id, serialized_extracted_data, serialized_validation_errors)
-    return {"upload_id": upload_id, "message": "Files processed successfully."}
+
+    # Fetch the extraction results to include in the response
+    results = await get_extraction_results(upload_id)
+    summary = results.get("summary", {})
+    extracted_transactions = results.get("extracted_transactions", [])
+
+    # Prepare transaction info for the response (just missing info for brevity)
+    transaction_info_list = []
+    for txn in extracted_transactions:
+        missing = txn.get("info", {}).get("missing_fields", [])
+        transaction_info_list.append({
+            "transaction_id": txn.get("transaction_id"),
+            "date": txn.get("date"),
+            "amount": txn.get("amount"),
+            "missing_fields": missing
+        })
+
+    return {
+        "upload_id": upload_id,
+        "message": "Files processed successfully.",
+        "upload_date": upload_date,
+        "total_files": total_files,
+        "total_amount": summary.get("total_amount"),
+        "missing_info_count": summary.get("missing_info_count"),
+        "transaction_info": transaction_info_list[:5] # Limit to a few for the response
+    }
 
 @app.get("/results/{upload_id}", response_model=ProcessingReportResponse)
 async def get_results(upload_id: str):
@@ -147,17 +172,16 @@ async def get_results(upload_id: str):
     Retrieves the processing results for a specific upload ID.
     """
     results = await get_extraction_results(upload_id)
+    print(f"DEBUG: get_extraction_results output: {results}")
     if results:
         return ProcessingReportResponse(
-            total_amount=results.get("total_amount"),
-            extracted_data=results.get("extracted_data", []),
-            validation_errors=results.get("validation_errors", [])
+            summary=results.get("summary"),
+            extracted_transactions=[Transaction(**item) for item in results.get("extracted_transactions", [])],
         )
     else:
         return ProcessingReportResponse(
-            total_amount=None,
-            extracted_data=[],
-            validation_errors=[]
+            summary=None,
+            extracted_transactions=[],
         )
 
 @app.get("/history", response_model=List[HistoryItem])
@@ -165,20 +189,31 @@ async def get_history():
     history_data = await get_all_extraction_batches()
     return history_data
 
+@app.get("/transactions/{upload_id}", response_model=List[Transaction])
+async def read_transactions(upload_id: str):
+    """
+    Retrieves all transaction details for a specific upload ID.
+    """
+    transactions = await get_transactions_by_upload_id(upload_id)
+    if transactions:
+        return [Transaction(**item) for item in transactions]
+    else:
+        raise HTTPException(status_code=404, detail="Transactions not found for this upload ID")
+
 @app.get("/download/{extract_id}")
 async def download_zip(extract_id: str):
     results = await get_extraction_results(extract_id)
     if not results:
         raise HTTPException(status_code=404, detail="Extraction results not found")
 
-    extracted_data = results.get("extracted_data", [])
+    extracted_data = results.get("extracted_transactions", [])
     zip_filename = f"extracted_data_{extract_id}.zip"
     zip_path = os.path.join(TEMP_ZIP_DIR, zip_filename)
     os.makedirs(TEMP_ZIP_DIR, exist_ok=True)
 
     try:
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            data_json = json.dumps([item.model_dump() for item in extracted_data], indent=4)
+            data_json = json.dumps(extracted_data, indent=4)
             zipf.writestr(f"extracted_data_{extract_id}.json", data_json)
 
         await store_zip_file_path(extract_id, zip_path)
@@ -193,10 +228,10 @@ async def download_zip(extract_id: str):
 @app.get("/download/excel/{extract_id}")
 async def download_excel(extract_id: str):
     results = await get_extraction_results(extract_id)
-    if not results or not results.get("extracted_data"):
+    if not results or not results.get("extracted_transactions"):
         raise HTTPException(status_code=404, detail="Extraction results not found")
 
-    df = pd.DataFrame([item.model_dump() for item in results["extracted_data"]])
+    df = pd.DataFrame(results["extracted_transactions"])
     excel_file = BytesIO()
     df.to_excel(excel_file, index=False, sheet_name="Extracted Data")
     excel_file.seek(0)
@@ -210,10 +245,10 @@ async def download_excel(extract_id: str):
 @app.get("/download/csv/{extract_id}")
 async def download_csv(extract_id: str):
     results = await get_extraction_results(extract_id)
-    if not results or not results.get("extracted_data"):
+    if not results or not results.get("extracted_transactions"):
         raise HTTPException(status_code=404, detail="Extraction results not found")
 
-    df = pd.DataFrame([item.model_dump() for item in results["extracted_data"]])
+    df = pd.DataFrame(results["extracted_transactions"])
     csv_file = BytesIO()
     df.to_csv(csv_file, index=False, encoding="utf-8")
     csv_file.seek(0)
