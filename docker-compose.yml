@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: ./deployment/Dockerfile.backend
     volumes:
-      - .:/app
+      - .:/app  # Mounts everything including existing venv
     working_dir: /app
     ports:
       - "8000:8000"
