@@ -8,6 +8,9 @@ const HistoryPage = () => {
   const [history, setHistory] = useState([]);
   const [downloadOptionsVisible, setDownloadOptionsVisible] = useState(null);
   const [selectedDownloadId, setSelectedDownloadId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTransactionData, setModalTransactionData] = useState([]);
+  const [selectedUploadIdForModal, setSelectedUploadIdForModal] = useState(null);
 
   useEffect(() => {
     fetchHistory();
@@ -27,9 +30,24 @@ const HistoryPage = () => {
     }
   };
 
+  const fetchTransactionDetails = async (uploadId) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/transactions/${uploadId}`); // Adjust URL
+      if (response.ok) {
+        const data = await response.json();
+        setModalTransactionData(data);
+        setSelectedUploadIdForModal(uploadId);
+        setIsModalOpen(true);
+      } else {
+        console.error('Failed to fetch transaction details:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching transaction details:', error);
+    }
+  };
+
   const handleView = (uploadId) => {
-    // Redirect to a results detail page (you might need to create this)
-    window.location.href = `/results-detail/${uploadId}`;
+    fetchTransactionDetails(uploadId);
   };
 
   const handleDownloadClick = (uploadId) => {
@@ -44,6 +62,12 @@ const HistoryPage = () => {
       setDownloadOptionsVisible(null);
       setSelectedDownloadId(null);
     }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalTransactionData([]);
+    setSelectedUploadIdForModal(null);
   };
 
   return (
@@ -112,6 +136,57 @@ const HistoryPage = () => {
           </div>
         ) : (
           <p>No transaction history available.</p>
+        )}
+
+        {/* The Modal */}
+        {isModalOpen && (
+          <div className="fixed z-10 inset-0 overflow-y-auto" onClick={(e) => { if (e.target.classList.contains('fixed')) closeModal(); }}>
+            <div className="flex items-center justify-center min-h-screen p-4">
+              <div className="relative bg-white rounded-lg shadow-xl max-w-3xl w-full p-6">
+                <div className="absolute top-0 right-0 -mt-4 -mr-4">
+                  <button
+                    onClick={closeModal}
+                    className="bg-red-500 text-white rounded-full shadow focus:outline-none focus:ring-2 focus:ring-red-600 p-2"
+                  >
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <h2 className="text-xl font-semibold mb-4">Transaction Details - ID: {selectedUploadIdForModal}</h2>
+                <div className="modal-details">
+                  {modalTransactionData.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            {/* Add other relevant columns */}
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {modalTransactionData.map((transaction) => (
+                            <tr key={transaction.id}>
+                              <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.transaction_id || 'N/A'}</td>
+                              <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.date || 'N/A'}</td>
+                              <td className="px-3 py-4 text-sm text-gray-500">{transaction.description || 'N/A'}</td>
+                              <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">${transaction.amount ? parseFloat(transaction.amount).toFixed(2) : 'N/A'}</td>
+                              {/* Add other relevant data */}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p>No transaction details available for this extraction.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </main>
 
