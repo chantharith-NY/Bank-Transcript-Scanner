@@ -178,13 +178,13 @@ export default function Home() {
         </div>
 
         {/* Display Results */}
-        {results && results.extracted_data && results.extracted_data.length > 0 && (
+        {results && results.extracted_transactions && results.extracted_transactions.length > 0 && (
           <div className="mt-8 p-6 bg-white shadow-md rounded-lg">
             <h2 className="text-xl font-semibold text-[#1C2526] mb-4">Extraction Results:</h2>
 
-            {results.total_amount !== null && (
+            {results.summary?.total_amount !== undefined && (
               <p className="mb-2">
-                <span className="font-bold">Total Amount:</span> ${results.total_amount?.toFixed(2)}
+                <span className="font-bold">Total Amount:</span> ${results.summary.total_amount.toFixed(2)}
               </p>
             )}
 
@@ -203,7 +203,7 @@ export default function Home() {
 
             <h3 className="text-lg font-semibold text-[#1C2526] mb-2">Extracted Transactions:</h3>
             <ul>
-              {results.extracted_data.map((transaction, index) => (
+              {results.extracted_transactions.map((transaction, index) => (
                 <li key={index} className="mb-2">
                   Date: {transaction.date || 'N/A'}, Description: {transaction.description || 'N/A'}, Amount: ${transaction.amount !== null ? transaction.amount.toFixed(2) : 'N/A'}
                 </li>
@@ -211,6 +211,7 @@ export default function Home() {
             </ul>
           </div>
         )}
+
 
         {uploadStatus === 'success' && !results && (
           <p className="mt-4 text-green-500">Upload successful. Fetching results...</p>
