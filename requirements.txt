@@ -9,7 +9,7 @@ cycler
 datetime
 debugpy
 decorator
-dotenv
+dotenv  
 executing
 fastapi
 fonttools
