@@ -184,7 +184,14 @@ export default function Home() {
 
             {results.summary?.total_amount !== undefined && (
               <p className="mb-2">
-                <span className="font-bold">Total Amount:</span> ${results.summary.total_amount.toFixed(2)}
+                <span className="font-bold">Total Amount:</span>{' '}
+                {typeof results.summary.total_amount === 'object'
+                  ? Object.entries(results.summary.total_amount).map(([currency, amount]) => (
+                      <span key={currency}>
+                        {amount.toFixed(2)} {currency}{' '}
+                      </span>
+                    ))
+                  : `$${Number(results.summary.total_amount).toFixed(2)}`}
               </p>
             )}
 
@@ -205,7 +212,7 @@ export default function Home() {
             <ul>
               {results.extracted_transactions.map((transaction, index) => (
                 <li key={index} className="mb-2">
-                  Date: {transaction.date || 'N/A'}, Description: {transaction.description || 'N/A'}, Amount: ${transaction.amount !== null ? transaction.amount.toFixed(2) : 'N/A'}
+                  Date: {transaction.date || 'N/A'}, Description: {transaction.description || 'N/A'}, Amount: {transaction.amount !== null ? `${transaction.amount.toFixed(2)}${transaction.currency ? ' ' + transaction.currency : ''}` : 'N/A'}
                 </li>
               ))}
             </ul>

@@ -3,6 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import * as XLSX from 'xlsx';
 
 const HistoryPage = () => {
   const [history, setHistory] = useState([]);
@@ -11,6 +12,9 @@ const HistoryPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTransactionData, setModalTransactionData] = useState([]);
   const [selectedUploadIdForModal, setSelectedUploadIdForModal] = useState(null);
+  const [page, setPage] = useState(0);
+  const pageSize = 10;
+  const totalPages = Math.ceil(history.length / pageSize);
 
   useEffect(() => {
     fetchHistory();
@@ -38,6 +42,10 @@ const HistoryPage = () => {
         setModalTransactionData(data);
         setSelectedUploadIdForModal(uploadId);
         setIsModalOpen(true);
+      } else if (response.status === 404) {
+        setModalTransactionData([]);
+        setSelectedUploadIdForModal(uploadId);
+        setIsModalOpen(true);
       } else {
         console.error('Failed to fetch transaction details:', response.status);
       }
@@ -57,8 +65,57 @@ const HistoryPage = () => {
 
   const handleDownload = async (format) => {
     if (selectedDownloadId) {
-      const url = format === 'excel' ? `/download/excel/${selectedDownloadId}` : `/download/csv/${selectedDownloadId}`;
-      window.location.href = url; // Trigger download
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/transactions/${selectedDownloadId}`);
+        if (!response.ok) {
+          alert('Failed to fetch transaction data for report.');
+          return;
+        }
+        const transactions = await response.json();
+        if (format === 'csv') {
+          // Generate CSV
+          const headers = ['Transaction ID', 'Date', 'Description', 'Amount'];
+          const rows = transactions.map(tran => [
+            tran.transaction_id || '',
+            tran.date || '',
+            tran.description || '',
+            tran.amount !== undefined ? tran.amount : ''
+          ]);
+          const csvContent = [headers, ...rows].map(e => e.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+          const blob = new Blob([csvContent], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `transaction_${selectedDownloadId}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } else if (format === 'excel') {
+          // Generate Excel
+          const ws = XLSX.utils.json_to_sheet(transactions.map(tran => ({
+            'Transaction ID': tran.transaction_id || '',
+            'Date': tran.date || '',
+            'Description': tran.description || '',
+            'Amount': tran.amount !== undefined ? tran.amount : ''
+          })));
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+          const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+          const blob = new Blob([wbout], { type: 'application/octet-stream' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `transaction_${selectedDownloadId}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        }
+      } catch (error) {
+        alert('Error generating file. Check console for details.');
+        console.error(error);
+      }
       setDownloadOptionsVisible(null);
       setSelectedDownloadId(null);
     }
@@ -97,11 +154,19 @@ const HistoryPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {history.map((item) => (
+                {history.slice(page * pageSize, (page + 1) * pageSize).map((item) => (
                   <tr key={item.upload_id}>
                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 sm:px-6">{item.upload_id}</td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 sm:px-6">{new Date(item.upload_date).toLocaleString()}</td>
-                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 sm:px-6">${item.total_amount ? item.total_amount.toFixed(2) : 'N/A'}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 sm:px-6">
+                      {item.total_amount && typeof item.total_amount === 'object' ? (
+                        Object.entries(item.total_amount).map(([currency, amount]) => (
+                          <div key={currency}>{amount.toFixed(2)} {currency}</div>
+                        ))
+                      ) : (
+                        item.total_amount !== undefined && item.total_amount !== null ? `$${Number(item.total_amount).toFixed(2)}` : 'N/A'
+                      )}
+                    </td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 sm:px-6">{item.total_files}</td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 sm:px-6">{item.validation_errors_count || 0}</td>
                     <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium sm:px-6">
@@ -133,6 +198,25 @@ const HistoryPage = () => {
                 ))}
               </tbody>
             </table>
+            {history.length > pageSize && (
+              <div className="flex justify-between items-center mt-2">
+                <button
+                  className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                >
+                  &larr;
+                </button>
+                <span className="mx-4">Page {page + 1} of {totalPages}</span>
+                <button
+                  className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                >
+                  &rarr;
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <p>No transaction history available.</p>
