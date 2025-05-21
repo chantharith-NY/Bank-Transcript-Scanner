@@ -17,7 +17,7 @@ async def create_extraction_batch(upload_id: str, upload_date: datetime, total_f
     })
 
 async def store_extracted_data(upload_id: str, all_extracted_data: List[Dict], validation_errors: List[Dict]):
-    total_amount = 0
+    total_amounts = {}
     missing_info_count = 0
     stored_transactions_count = 0
 
@@ -26,7 +26,9 @@ async def store_extracted_data(upload_id: str, all_extracted_data: List[Dict], v
         await transactions_collection.insert_one(transaction)
         stored_transactions_count += 1
         if transaction.get("amount") is not None and isinstance(transaction["amount"], (int, float)):
-            total_amount += transaction["amount"]
+            currency = transaction.get("currency", "UNKNOWN")
+            total_amounts.setdefault(currency, 0)
+            total_amounts[currency] += transaction["amount"]
         if transaction.get("info") and transaction["info"].get("missing_fields"):
             missing_info_count += 1
 
@@ -34,7 +36,7 @@ async def store_extracted_data(upload_id: str, all_extracted_data: List[Dict], v
         {"upload_id": upload_id},
         {"$set": {
             "extraction_summary.total_transactions": stored_transactions_count,
-            "extraction_summary.total_amount": total_amount,
+            "extraction_summary.total_amount": total_amounts,
             "extraction_summary.missing_info_count": missing_info_count,
         }}
     )
@@ -52,6 +54,12 @@ async def get_all_extraction_batches() -> List[Dict]:
     history_data = []
     async for batch in batches_collection.find().sort("upload_date", -1):
         total_amount = batch.get("extraction_summary", {}).get("total_amount")
+        # Ensure total_amount is always a dict for response validation
+        if isinstance(total_amount, (int, float)):
+            # Assume USD if not specified
+            total_amount = {"USD": float(total_amount)}
+        elif total_amount is None:
+            total_amount = {}
         missing_info_count = batch.get("extraction_summary", {}).get("missing_info_count", 0)
         history_data.append({
             "upload_id": batch.get("upload_id"),
@@ -63,7 +71,12 @@ async def get_all_extraction_batches() -> List[Dict]:
     return history_data
 
 async def get_transactions_by_upload_id(upload_id: str) -> List[Dict]:
-    return await transactions_collection.find({"upload_id": upload_id}).to_list(None)
+    transactions = await transactions_collection.find({"upload_id": upload_id}).to_list(None)
+    # Ensure transaction_id is always present in the returned dict (even if None)
+    for t in transactions:
+        if 'transaction_id' not in t:
+            t['transaction_id'] = None
+    return transactions
 
 async def store_zip_file_path(extract_id: str, zip_file_path: str):
     await batches_collection.update_one({"upload_id": extract_id}, {"$set": {"zip_file_path": zip_file_path}})

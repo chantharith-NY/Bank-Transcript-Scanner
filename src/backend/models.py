@@ -35,7 +35,7 @@ class FileUploadResponse(BaseModel):
     message: str
     upload_date: Optional[datetime] = None
     total_files: Optional[int] = None
-    total_amount: Optional[float] = None
+    total_amount: Optional[Dict[str, float]] = None  # <-- Accepts dict by currency
     missing_info_count: Optional[int] = None
     transaction_info: Optional[List[Dict]] = None
 
@@ -47,5 +47,5 @@ class HistoryItem(BaseModel):
     upload_id: str
     upload_date: datetime
     total_files: int
-    total_amount: Optional[float]
+    total_amount: Optional[Dict[str, float]] = None
     validation_errors_count: int
