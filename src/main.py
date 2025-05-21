@@ -17,7 +17,7 @@ import pandas as pd
 from .backend.database import create_extraction_batch, store_extracted_data, get_extraction_results, get_all_extraction_batches, store_zip_file_path, store_report_file_path, get_transactions_by_upload_id
 from .backend.models import FileUploadResponse, ExtractionResult, ValidationError, ProcessingReportResponse, HistoryItem, Transaction
 from .backend.bank_classifier import classify_bank as classify_bank_module
-from .backend.preprocess import preprocess_image
+from .backend.preprocess import preprocess_image, preprocess_image_advanced
 from .extraction.extract_data import extract_data as extract_data_module
 from .extraction.validation import validate_data as validate_data_module
 from .backend.routes import router
@@ -54,9 +54,14 @@ async def classify_bank(image_path: str) -> str:
         print(f"Error classifying bank: {e}")
         return None
 
-async def extract_data(image: np.ndarray, bank_name: str = None) -> List[dict]:
+async def extract_data(image: np.ndarray, bank_name: str = None, debug: bool = False) -> List[dict]:
     try:
-        extracted_transactions = extract_data_module(image, bank_name)
+        # Pass debug flag to extraction for ABA
+        if bank_name == "ABA Bank":
+            from .extraction.extract_data import extract_data_aba
+            extracted_transactions = extract_data_aba(image, debug=debug)
+        else:
+            extracted_transactions = extract_data_module(image, bank_name)
         return extracted_transactions
     except Exception as e:
         print(f"Error during data extraction (bank: {bank_name}): {e}")
@@ -97,10 +102,11 @@ async def upload_file(files: List[UploadFile] = File(...)):
             processed_image = None
 
             if "image" in file_type:
-                processed_image = preprocess_image(upload_file_path)
+                # Use advanced preprocessing for robust handling
+                processed_image = preprocess_image_advanced(upload_file_path, debug=True)  # Enable debug
                 bank_name = await classify_bank(upload_file_path)
                 print(f"Classified bank for {file_name}: {bank_name}")
-                extracted_transactions = await extract_data(processed_image, bank_name)
+                extracted_transactions = await extract_data(processed_image, bank_name, debug=True)  # Enable debug
                 valid_transactions, errors = await validate_data(extracted_transactions)
                 extracted_data_all.extend(valid_transactions)
                 validation_errors_all.extend(errors)
@@ -113,7 +119,7 @@ async def upload_file(files: List[UploadFile] = File(...)):
                         intermediate_image_name = f"{file_name}_page_{i+1}.png"
                         intermediate_image_path = os.path.join(TEMP_PROCESS_DIR, intermediate_image_name)
                         image.save(intermediate_image_path, 'PNG')
-                        preprocessed_image = preprocess_image(intermediate_image_path)
+                        preprocessed_image = preprocess_image_advanced(intermediate_image_path)
                         if i == 0:
                             bank_name = await classify_bank(intermediate_image_path)
                             print(f"Classified bank for PDF {file_name} (page 1): {bank_name}")
@@ -153,6 +159,7 @@ async def upload_file(files: List[UploadFile] = File(...)):
             "transaction_id": txn.get("transaction_id"),
             "date": txn.get("date"),
             "amount": txn.get("amount"),
+            "currency": txn.get("currency"),
             "missing_fields": missing
         })
 
