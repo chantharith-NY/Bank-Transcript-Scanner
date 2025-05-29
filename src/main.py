@@ -21,6 +21,7 @@ from .backend.preprocess import preprocess_image, preprocess_image_advanced
 from .extraction.extract_data import extract_data as extract_data_module
 from .extraction.validation import validate_data as validate_data_module
 from .backend.routes import router
+from .extraction.extract_data import extract_data_aba
 
 app = FastAPI(
     title="Bank Transaction Scanner",
@@ -58,11 +59,28 @@ async def extract_data(image: np.ndarray, bank_name: str = None, debug: bool = F
     try:
         # Pass debug flag to extraction for ABA
         if bank_name == "ABA Bank":
-            from .extraction.extract_data import extract_data_aba
             extracted_transactions = extract_data_aba(image, debug=debug)
         else:
             extracted_transactions = extract_data_module(image, bank_name)
-        return extracted_transactions
+        # Normalize output to always have 'amount' and 'currency'
+        normalized = []
+        for txn in extracted_transactions:
+            amount = None
+            currency = None
+            if txn.get("amount_usd") is not None:
+                amount = txn["amount_usd"]
+                currency = "USD"
+            elif txn.get("amount_khr") is not None:
+                amount = txn["amount_khr"]
+                currency = "KHR"
+            normalized.append({
+                "transaction_id": txn.get("transaction_id"),
+                "date": txn.get("transaction_date"),
+                "amount": amount,
+                "currency": currency,
+                # Optionally include other fields if needed
+            })
+        return normalized
     except Exception as e:
         print(f"Error during data extraction (bank: {bank_name}): {e}")
         return []
