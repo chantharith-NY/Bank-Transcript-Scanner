@@ -18,10 +18,10 @@ def validate_transaction(transaction: Dict) -> Dict:
         missing_fields.append("transaction_id")
     if "date" not in transaction or not transaction.get("date"):
         missing_fields.append("date")
-    if "time" not in transaction or not transaction.get("time"):
-        missing_fields.append("time")
     if "amount" not in transaction or transaction.get("amount") is None:
         missing_fields.append("amount")
+    if "currency" not in transaction or not transaction.get("currency"):
+        missing_fields.append("currency")
 
     if missing_fields:
         return {"is_valid": False, "missing_fields": missing_fields, "transaction_data": transaction}
