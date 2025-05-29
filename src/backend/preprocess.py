@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 
 def preprocess_image(image_path):
     img = cv2.imread(image_path)
@@ -39,20 +40,18 @@ def preprocess_image_advanced(image_path, debug=False):
     kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
     sharpened = cv2.filter2D(adjusted, -1, kernel)
     normalized = cv2.normalize(sharpened, None, 0, 255, cv2.NORM_MINMAX)
-    # Only use thresholding for dark backgrounds
-    if mean_val < 127:
-        # Try adaptive thresholding as a fallback
-        result = cv2.adaptiveThreshold(normalized, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
-    else:
-        result = normalized
+    result = normalized
+    # Always save the preprocessed image to temp_processing for traceability
+    import os
+    preproc_dir = os.path.join(os.path.dirname(image_path), '..', 'temp_processing')
+    os.makedirs(preproc_dir, exist_ok=True)
+    preproc_path = os.path.join(preproc_dir, f'preprocessed_{os.path.basename(image_path)}')
+    cv2.imwrite(preproc_path, result)
     if debug:
-        import os
         debug_dir = os.path.join(os.path.dirname(image_path), 'debug_preprocess')
         os.makedirs(debug_dir, exist_ok=True)
         cv2.imwrite(os.path.join(debug_dir, '01_gray.png'), gray)
         cv2.imwrite(os.path.join(debug_dir, '02_adjusted.png'), adjusted)
         cv2.imwrite(os.path.join(debug_dir, '03_sharpened.png'), sharpened)
         cv2.imwrite(os.path.join(debug_dir, '04_normalized.png'), normalized)
-        if mean_val < 127:
-            cv2.imwrite(os.path.join(debug_dir, '05_thresh.png'), result)
     return result
