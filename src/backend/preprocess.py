@@ -42,7 +42,6 @@ def preprocess_image_advanced(image_path, debug=False):
     normalized = cv2.normalize(sharpened, None, 0, 255, cv2.NORM_MINMAX)
     result = normalized
     # Always save the preprocessed image to temp_processing for traceability
-    import os
     preproc_dir = os.path.join(os.path.dirname(image_path), '..', 'temp_processing')
     os.makedirs(preproc_dir, exist_ok=True)
     preproc_path = os.path.join(preproc_dir, f'preprocessed_{os.path.basename(image_path)}')

@@ -28,11 +28,11 @@ def extract_data_aba(image: np.ndarray, debug: bool=False) -> List[Dict]:
         # Extract Transaction Date
         trx_date = None
         for line in lines:
-            if "ថ្ងៃធ្វើប្រតិបត្តិការ" in line or "Transaction date" in line:
-                match = re.search(r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{2}, \d{4} \| \d{1,2}:\d{2}(AM|PM)', line)
-                if match:
-                    trx_date = match.group()
-                    break
+            # More robust date extraction: comma optional, flexible spacing, AM/PM
+            match = re.search(r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4}\s+\d{1,2}:\d{2}\s*(AM|PM)', line)
+            if match:
+                trx_date = match.group()
+                break
 
         # Extract Amount (top line)
         amount_usd = None
