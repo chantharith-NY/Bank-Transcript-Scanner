@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="bg-white border-t border-gray-200 text-[#1C2526] text-sm py-4 px-4">
+    <footer className="bg-white border-t border-gray-200 text-[#1C2526] text-sm py-4 px-2">
       <div className="text-center">
         <p className="mb-2">
           Developed by <span className="font-semibold">AMS 3rd Gen</span>
