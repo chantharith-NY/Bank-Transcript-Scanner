@@ -1,104 +1,192 @@
 # Bank Transcript Scanner
 
-## 📌 Objective
-This project aims to automate the extraction of key financial data from scanned bank transcripts (PDFs or images) for business auditing. The pipeline consists of:
-1. **OCR Processing** – Convert scanned bank transcripts into readable text.
-2. **Bank Classification** – Identify the bank to apply specific extraction rules.
-3. **Data Extraction** – Extract date, transaction ID, and amount from the transcript.
-4. **Validation & Storage** – Ensure extracted data accuracy and store it in a structured format.
-5. **Web Deployment** – Deploy the system as a web application for user-friendly access.
+Bank Transaction Scanner is an OCR-powered, machine learning-enhanced web platform designed to automatically classify bank receipt images (ABA and ACLEDA) and extract structured transaction data — including date, amount, currency, and transaction ID — from Khmer and English receipts.
 
-## 🏗️ Project Structure
-```
-📂 bank_transcript_scanner
-│── 📁 data                  # Raw and processed data
-│   ├── 📂 raw               # Original scanned PDFs/images of bank statements
-│   ├── 📂 processed         # Extracted text from OCR
-│── 📁 models                # Trained models for classification & extraction
-│   ├── bank_classification.h5  # Bank classification model
-│── 📁 notebooks             # Jupyter Notebooks for exploration and testing
-│── 📁 src                   # Source code
-│   ├── 📂 extraction        # Extract key details from statements
-│   │   ├── extract_data.py  # Extract dates, amounts, transaction IDs
-│   │   ├── validation.py    # Validate extracted information
-│   ├── 📂 backend           # Backend API (FastAPI)
-│   │   ├── routes.py        # API routes for OCR, classification, extraction
-│   │   ├── models.py        # Define database models
-│   │   ├── database.py      # Database connection setup
-│   │   ├── classify_bank.py # Classify bank from extracted text
-│   │   ├── preprocess.py    # Preprocess images (grayscale, thresholding, etc.)
-│   │   ├── requirements.txt # Backend dependencies
-│   ├── 📂 frontend          # Frontend (Next.js)
-│   │   ├── 📂 components    # Reusable UI components
-│   │   ├── 📂 pages         # Main pages (upload, results, etc.)
-│   │   ├── 📂 public        # Static assets (icons, logos)
-│   │   ├── 📂 styles        # CSS/Styling files
-│   │   ├── package.json     # Frontend dependencies
-│   │   ├── next.config.js   # Next.js configuration
-│   │   ├── App.js           # Main app file
-│   │   ├── index.js         # Home page
-│   ├── main.py              # Entry point for running pipeline (CLI)
-│── 📁 tests                 # Unit tests for OCR, classification, extraction
-│   ├── test_ocr.py          # Test OCR extraction
-│   ├── test_classification.py # Test bank classification model
-│   ├── test_extraction.py   # Test data extraction
-│── 📁 deployment            # Deployment configurations (Docker, cloud, etc.)
-│   ├── Dockerfile           # Docker setup
-│   ├── docker-compose.yml   # Multi-container setup (DB, API, frontend)
-│   ├── config.yaml          # Configuration settings
-│── requirements.txt         # Backend dependencies
-│── README.md                # Project documentation
-│── LICENSE                  # License information
+---
+
+## 🚀 Features
+
+- 🧠 **Bank Classification** — Identifies the issuing bank using a CNN model.
+
+- 🔍 **OCR & Data Extraction** — Preprocesses images and extracts transaction details.
+
+- 🧾 **Structured Output** — Parses transaction ID, date, amount, and currency.
+
+- 🗃️ **MongoDB Integration** — Stores transaction data and extraction history.
+
+- 🌐 **Web Interface** — Built using FastAPI and Next.js.
+
+- 📦 **Export & Download** — Export results individually or as zipped reports.
+
+---
+
+
+## 📁 Project Structure
 
 ```
+bank_transcript_scanner/
+│
+├── data/
+│   ├── raw/                  # Original scanned PDFs/images
+│   └── processed/            # OCR-processed text files
+│
+├── notebooks/                # Jupyter notebooks for model development
+│
+├── src/
+│   ├── models/               # Trained models
+│   │   └── bank_classification.h5
+│   ├── extraction/           # Transaction field extraction
+│   │   ├── extract_data.py
+│   │   └── validation.py
+│   ├── backend/              # FastAPI backend
+│   │   ├── routes.py
+│   │   ├── models.py
+│   │   ├── database.py
+│   │   ├── bank_classifier.py
+│   │   ├── preprocess.py
+│   │   └── requirements.txt
+│   ├── frontend/             # Next.js frontend
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── public/
+│   │   ├── package.json
+│   │   └── next.config.js
+│   └── main.py               # CLI entry point for local testing
+│
+├── docker-compose.yml        # Docker orchestration
+├── requirements.txt          # Project-wide dependencies
+├── LICENSE                   # Open source license
+└── README.md                 # This file
+```
+---
 
 ## 🛠️ Setup Instructions
+
+### With Docker (Recommended)
+
+```
+git clone https://github.com/yourusername/bank_transcript_scanner.git
+cd bank_transcript_scanner
+docker-compose up --build
+```
+
+Visit the app at: `http://localhost:3000`
+
+### Manual Setup
+
 1. Clone the repository:
-   ```bash
+   ```
    git clone https://github.com/chantharith-NY/Bank-Transcript-Scanner.git
    cd bank_transcript_scanner
    ```
 2. Create a virtual environment:
-   ```bash
+   ```
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 3. Install dependencies:
-   ```bash
+   ```
    pip install -r requirements.txt
    ```
-4. Run the pipeline (example):
-   ```bash
-   python src/main.py --input data/raw/sample.pdf
+4. Run Backend (FastAPI):
+   ```
+   uvicorn src.main:app --reload
    ```
 
-## 🌐 Web Deployment
-- **Frontend**: Built with React or Next.js for a modern and responsive UI.
-- **Backend**: Flask or FastAPI for API endpoints handling OCR, classification, and extraction.
-- **Deployment**: Dockerized setup with AWS, Vercel, or Heroku hosting.
-- **User Interaction**: Upload transcripts, view extracted data, download results, and manage scanned records.
+5. Run Frontend (Next.js):
+   ```
+   npm run build 
+   npm run dev
+   ```
 
-## 🔍 Features
-- **OCR Processing**: Uses Tesseract OCR.
-- **Bank Classification**: ML model to categorize bank transcripts.
-- **Data Extraction**: NLP and regex-based extraction of key financial details.
-- **Web Interface**: Allows easy document uploads and review of extracted data.
-- **Scalability**: Supports multiple bank formats and integrations.
+   Visit the app at: `http://localhost:3000`
 
-## 🚀 Next Steps
-- Implement OCR pipeline.
-- Train classification model.
-- Develop robust data extraction logic.
-- Build and deploy the full-stack web application.
+---
+
+## 🧪 How It Works
+- **Upload**: User uploads receipt image (PDF/JPG/PNG).
+
+- **Preprocess**: Convert to grayscale, enhance, resize, and apply thresholding.
+
+- **Classify**: CNN model predicts if it’s ABA or ACLEDA.
+
+- **Extract**: Based on bank template, OCR reads and extracts transaction data.
+
+- **Validate**: Ensures data is in valid format (e.g., dates, currency, IDs).
+
+- **Store**: MongoDB logs results with timestamps.
+
+- **Download**: User can download data in Excel, or CSV.
+
+---
+
+## 📈 Results
+- ✅ Successful extraction from Khmer and English receipts.
+
+- ✅ High OCR accuracy with advanced preprocessing.
+
+- ✅ Bank classification model achieved high test accuracy.
+
+- ✅ Web UI enabled smooth file upload, tracking, and download.
+
+---
+
+## 🧠 Tech Stack
+- **Frontend**: Next.js, Tailwind CSS
+
+- **Backend**: FastAPI (Python)
+
+- **OCR**: Tesseract OCR
+
+- **ML Framework**: TensorFlow / Keras
+
+- **Database**: MongoDB
+
+- **Deployment**: Docker, Docker Compose
+
+---
+
+## 📌 Limitations
+
+- Templates are hardcoded and may not generalize well to unknown layouts.
+
+- Khmer OCR can still produce errors depending on image quality.
+
+- No field-level cropping (future enhancement).
+
+- Currently supports only ABA and ACLEDA banks.
+
+---
+
+## 🧩 Future Improvements
+
+- Add support for more banks.
+
+- Automate template generation using layout detection.
+
+- Improve Khmer OCR accuracy.
+
+- Integrate OCR systems with cropping (e.g., Google Vision, LayoutLM).
+
+- Store uploaded images and link them to results.
+
+---
+
+## 👨‍💻 Contributors
+- Project Lead, and Backend: [NY Chantharith]("https://github.com/chantharith-NY/")
+- Frontend Development: [LENG Devid]("https://github.com/KIRIKUUU") and [NY Chantharith]("https://github.com/chantharith-NY/")
+- ML and Data Pipeline: [NHEN Theary]("https://github.com/nhentheary"), [NANG Chettra]("https://github.com/Chettraa"), [NGOUN Lyhorng]("https://github.com/Ngounlyhorn11") and [LY Chungheang]("https://github.com/Chungheang0980")
+- Documentation and QA: [NY Chantharith]("https://github.com/chantharith-NY/")
+
+---
+## 📬 Contact Us
+
+For feedback, questions, or collaborations:
+
+📧 Email: [chantharith77@gmail.com](mailto:chantharith77@gmail.com)
+
+---
 
 ## 📜 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-👨‍💻 Developed by: 
-- LENG Devid
-- LY Chungheang
-- NANG Chettra
-- NGOUN Lyhorng
-- NHEN Theary
-- NY Chantharith
