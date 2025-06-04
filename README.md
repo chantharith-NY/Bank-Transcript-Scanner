@@ -20,6 +20,18 @@ Bank Transaction Scanner is an OCR-powered, machine learning-enhanced web platfo
 
 ---
 
+## 🔀 Flowchart
+
+### Research Flowchart
+
+<img src="Research Flowchart.jpg" alt="Research Flowchart Image">
+
+### System Workflow
+
+<img src="System Workflow.png" alt="System Workflow Image">
+
+---
+
 
 ## 📁 Project Structure
 
